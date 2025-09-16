@@ -1,0 +1,103 @@
+name: Update README repos grid
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # تحديث يومي 06:00 UTC
+  workflow_dispatch:       # تشغيل يدوي من Actions
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate repos grid in README (stars-desc, 6 repos, 3x2)
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const USERNAME = 'obedaRahal';
+            const README_PATH = path.join(process.cwd(), 'README.md');
+
+            // أسماء مستودعات تريد استثناءها (اختياري)
+            const EXCLUDE = [
+              // "repo-name-to-skip"
+            ];
+
+            // اجلب حتى 100 ريبو عام
+            const repos = await github.paginate(
+              github.rest.repos.listForUser,
+              { username: USERNAME, per_page: 100 }
+            );
+
+            // فلترة + فرز: بالنجوم تنازليًا، ثم آخر تحديث
+            const clean = repos
+              .filter(r => !r.fork && !r.archived && !r.private && !EXCLUDE.includes(r.name))
+              .sort((a, b) => {
+                if (b.stargazers_count !== a.stargazers_count) {
+                  return b.stargazers_count - a.stargazers_count;
+                }
+                return new Date(b.pushed_at) - new Date(a.pushed_at);
+              });
+
+            const TAKE = 6;  // عدد الريpos
+            const COLS = 3;  // أعمدة الشبكة
+            const picked = clean.slice(0, TAKE);
+
+            const esc = (s='') => s.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();
+            const trunc = (s='', n=90) => {
+              const t = s.trim();
+              return t.length > n ? t.slice(0, n-1) + '…' : t;
+            };
+
+            let rows = [];
+            for (let i = 0; i < picked.length; i += COLS) {
+              const slice = picked.slice(i, i + COLS);
+
+              const cards = slice.map(r =>
+                `[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=${USERNAME}&repo=${r.name}&theme=light)](https://github.com/${USERNAME}/${r.name})`
+              );
+
+              const descs = slice.map(r => {
+                const stars = `⭐ ${r.stargazers_count}`;
+                const desc = trunc(esc(r.description || 'No description'));
+                return `<sub>${stars} — ${desc}</sub>`;
+              });
+
+              while (cards.length < COLS) cards.push(' ');
+              while (descs.length < COLS) descs.push(' ');
+
+              rows.push(`| ${cards.join(' | ')} |`);
+              rows.push(`| ${descs.join(' | ')} |`);
+            }
+
+            const header = Array(COLS).fill('Repo').join(' | ');
+            const sep    = Array(COLS).fill('---').join(' | ');
+            const table  = `| ${header} |\n| ${sep} |\n` + rows.join('\n');
+
+            let readme = fs.readFileSync(README_PATH, 'utf8');
+            const start = '<!-- AUTO-REPOS:START -->';
+            const end = '<!-- AUTO-REPOS:END -->';
+            const pattern = new RegExp(`${start}[\\s\\S]*?${end}`, 'm');
+            const block = `${start}\n${table}\n${end}`;
+
+            if (!pattern.test(readme)) {
+              core.setFailed('Markers not found in README. Make sure AUTO-REPOS markers exist.');
+            } else {
+              readme = readme.replace(pattern, block);
+              fs.writeFileSync(README_PATH, readme);
+              core.info('README updated with latest repositories (stars-desc, 3x2).');
+            }
+
+      - name: Commit & push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update repos grid (stars-desc, 6 repos, 3x2)"
+          branch: ${{ github.ref_name }}
