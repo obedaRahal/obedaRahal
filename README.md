@@ -106,8 +106,13 @@
   <br>
 
   <!-- AUTO-REPOS:START -->
-  Loading latest repositories...
-  <!-- AUTO-REPOS:END -->
+| Repo | Repo | Repo |
+| --- | --- | --- |
+| [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=obedaRahal&repo=obedaRahal&theme=light)](https://github.com/obedaRahal/obedaRahal) | [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=obedaRahal&repo=angular_compiler&theme=light)](https://github.com/obedaRahal/angular_compiler) | [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=obedaRahal&repo=project-x&theme=light)](https://github.com/obedaRahal/project-x) |
+| <sub>⭐ 0 — No description</sub> | <sub>⭐ 0 — No description</sub> | <sub>⭐ 0 — testing project and learning GIT</sub> |
+| [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=obedaRahal&repo=RepoTest&theme=light)](https://github.com/obedaRahal/RepoTest) |   |   |
+| <sub>⭐ 0 — No description</sub> |   |   |
+<!-- AUTO-REPOS:END -->
 
 </details>
 
